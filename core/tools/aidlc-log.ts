@@ -773,7 +773,7 @@ function handleAnswer(args: string[]): void {
     // a human-backed checkpoint below: its fresh-turn requirement is not waived
     // by Construction autonomy even though its text is one of two exact strings.
     const answerAuthorship =
-      autonomousDecision || humanPresenceGuardDisabled()
+      autonomousDecision || humanPresenceGuardDisabled(pd)
         ? null
         : selfAttributedDecisionMarker(flags.details, "answer");
     if (answerAuthorship) {
@@ -809,7 +809,7 @@ function handleAnswer(args: string[]): void {
         );
       }
       if (
-        !humanPresenceGuardDisabled() &&
+        !humanPresenceGuardDisabled(pd) &&
         (!pending.humanAfterDecision || !humanActedSinceLastAnswer(pd))
       ) {
         error(
@@ -1045,7 +1045,7 @@ function handleAnswer(args: string[]): void {
     if (targetAtApprovalGate && !pendingDecision) {
       if (
         !autonomousDecision &&
-        !humanPresenceGuardDisabled() &&
+        !humanPresenceGuardDisabled(pd) &&
         !humanActedSinceLastAnswer(pd)
       ) {
         error(
@@ -1067,7 +1067,7 @@ function handleAnswer(args: string[]): void {
 
     if (autonomousDecision) {
       // autonomous Construction: no human presence required
-    } else if (humanPresenceGuardDisabled()) {
+    } else if (humanPresenceGuardDisabled(pd)) {
       // scoped test off-switch
     } else if (!humanActedSinceLastAnswer(pd)) {
       error(

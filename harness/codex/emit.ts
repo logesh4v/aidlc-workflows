@@ -107,6 +107,12 @@ model_provider = "amazon-bedrock"
 model_context_window = 1000000
 model_reasoning_effort = "high"
 
+# Tool output budget. Codex cuts a shell result at 10,000 tokens (about 40 KB)
+# for the models in its catalog but at 10,000 BYTES for a model it does not
+# know (custom providers, --oss). AIDLC prints a workflow instruction of up to
+# 28 KiB as one shell result, so the budget is raised for every model.
+tool_output_token_limit = 20000
+
 [model_providers.amazon-bedrock.aws]
 # Set to your AWS profile/region with Bedrock model access.
 profile = "default"

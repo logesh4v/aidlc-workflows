@@ -218,7 +218,7 @@ The state file at `aidlc/spaces/<space>/intents/<YYMMDD>-<label>/aidlc-state.md`
 | Section | Contents |
 |---------|----------|
 | Project Information | Project description, type (greenfield/brownfield), scope, start date, lifecycle phase, active agent, worktree path, Bolt refs, practices affirmed timestamp |
-| Scope Configuration | Stages to execute, stages to skip (with reasons), depth level, test strategy |
+| Scope Configuration | Stages to execute, stages to skip (with reasons), depth level, test strategy, `Guard Policy` with its source, `Guards Off` (written only once a fence was switched off for this piece of work), and the three ceremony lines |
 | Workspace State | Project root, detected languages, frameworks, build system |
 | Execution Plan Summary | Total stages, completed count, in-progress stage |
 | Runtime State | Revision count plus optional Construction iteration, Unit ownership, and Unit gate rhythm |

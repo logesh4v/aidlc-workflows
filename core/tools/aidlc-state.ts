@@ -79,6 +79,7 @@ import {
   holdsAuditLock,
   humanActedSinceGate,
   humanPresenceGuardDisabled,
+  lowerFenceSentence,
   unattendedHumanPresenceHint,
   intentRepos,
   isAutonomousConstructionGate,
@@ -722,7 +723,10 @@ export function main(argv: string[]): void {
         "the workflow's completion and approval checks. Use aidlc-orchestrate.ts report " +
         "--stage <slug> --result " +
         "<awaiting-approval|approved|rejected|revised|completed|skipped>; use " +
-        "aidlc-orchestrate.ts park to pause, and next/jump to move through the workflow.",
+        "aidlc-orchestrate.ts park to pause, and next/jump to move through the workflow. " +
+        // The tool-side twin of the state-transition fence: same invariant, same
+        // way out, so the human is not told to go and find it.
+        lowerFenceSentence("state-transition"),
     );
   }
 
@@ -2224,19 +2228,19 @@ function readEngineUnitDirective(
     }
     const transport =
       directive !== null && typeof directive === "object"
-        ? directive as { kind?: unknown; continue_token?: unknown }
+        ? directive as { kind?: unknown; receipt?: unknown }
         : {};
     if (transport.kind !== "load-steering") break;
     if (
-      typeof transport.continue_token !== "string" ||
-      transport.continue_token.length === 0
+      typeof transport.receipt !== "string" ||
+      transport.receipt.length === 0
     ) {
       error(
-        `Refusing to ${action} unit "${unit}" for "${stage}": the engine's steering directive ` +
-          "did not include a continuation token.",
+        `Refusing to ${action} unit "${unit}" for "${stage}": the engine's rules part ` +
+          "did not include its receipt.",
       );
     }
-    subargs = ["continue", transport.continue_token, "--project-dir", pd];
+    subargs = ["continue", transport.receipt, "--project-dir", pd];
   }
   return directive !== null && typeof directive === "object"
     ? directive as EngineUnitDirective
@@ -2311,19 +2315,19 @@ function requireEngineRoutedWaveUnit(
     }
     const transport =
       directive !== null && typeof directive === "object"
-        ? directive as { kind?: unknown; continue_token?: unknown }
+        ? directive as { kind?: unknown; receipt?: unknown }
         : {};
     if (transport.kind !== "load-steering") break;
     if (
-      typeof transport.continue_token !== "string" ||
-      transport.continue_token.length === 0
+      typeof transport.receipt !== "string" ||
+      transport.receipt.length === 0
     ) {
       error(
         `Refusing wave completion for unit "${unit}" of "${stage}": the engine's ` +
-          "steering directive did not include a continuation token.",
+          "rules part did not include its receipt.",
       );
     }
-    subargs = ["continue", transport.continue_token, "--project-dir", pd];
+    subargs = ["continue", transport.receipt, "--project-dir", pd];
   }
 
   const routed =
@@ -5384,7 +5388,7 @@ function verifyApprovalDecision(
     !forceHuman && isAutonomousConstructionGate(content, stage);
   const approvalInput = userInput?.trim();
   const approvalAuthorship =
-    autonomousDecision || humanPresenceGuardDisabled()
+    autonomousDecision || humanPresenceGuardDisabled(pd)
       ? null
       : selfAttributedDecisionMarker(approvalInput, "approval");
   if (approvalAuthorship) {
@@ -5397,7 +5401,7 @@ function verifyApprovalDecision(
         "project terms instead of recording their decision.",
     );
   }
-  if (!autonomousDecision && !humanPresenceGuardDisabled()) {
+  if (!autonomousDecision && !humanPresenceGuardDisabled(pd)) {
     const rawRevisionCount = getField(content, "Revision Count");
     const parsedRevisionCount = rawRevisionCount
       ? parseInt(rawRevisionCount, 10)
@@ -5423,7 +5427,7 @@ function verifyApprovalDecision(
   }
   if (
     !autonomousDecision &&
-    !humanPresenceGuardDisabled() &&
+    !humanPresenceGuardDisabled(pd) &&
     !humanActedSinceGate(pd)
   ) {
     error(
@@ -5536,7 +5540,7 @@ function handleApprove(args: string[]): void {
       );
     }
     if (
-      !humanPresenceGuardDisabled() &&
+      !humanPresenceGuardDisabled(pd) &&
       !humanActedSinceGate(pd)
     ) {
       error(
@@ -5858,7 +5862,7 @@ function handleReject(args: string[]): void {
   if (
     !autonomousDecision &&
     feedbackStatus === "not-applicable" &&
-    !humanPresenceGuardDisabled() &&
+    !humanPresenceGuardDisabled(pd) &&
     !isRequestChangesChoice(decision)
   ) {
     const cancellation = isNonAnswer(decision)
@@ -5898,7 +5902,7 @@ function handleReject(args: string[]): void {
     reviewRecoverySpentInCurrentAttempt(pd, content, stage);
   if (
     (!autonomousDecision || recoveryResetNeedsHuman) &&
-    !humanPresenceGuardDisabled() &&
+    !humanPresenceGuardDisabled(pd) &&
     !humanActedSinceGate(pd)
   ) {
     if (recoveryResetNeedsHuman) {
@@ -5924,7 +5928,7 @@ function handleReject(args: string[]): void {
   // rejection here rather than laundering it into the trail as the human's.
   // Autonomous Construction is exempt (the conductor owns the decision there).
   const rejectionAuthorship =
-    autonomousDecision || humanPresenceGuardDisabled()
+    autonomousDecision || humanPresenceGuardDisabled(pd)
       ? null
       : selfAttributedDecisionMarker(feedback, "rejection");
   if (rejectionAuthorship) {
